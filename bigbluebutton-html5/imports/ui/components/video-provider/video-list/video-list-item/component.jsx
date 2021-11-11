@@ -15,6 +15,7 @@ import {
   unsubscribeFromStreamStateChange,
 } from '/imports/ui/services/bbb-webrtc-sfu/stream-state-service';
 import { ACTIONS } from '/imports/ui/components/layout/enums';
+import Auth from '/imports/ui/services/auth';
 
 const ALLOW_FULLSCREEN = Meteor.settings.public.app.allowFullscreen;
 
@@ -132,24 +133,26 @@ class VideoListItem extends Component {
     const MAX_WIDTH = 640;
     const fullWidthMenu = window.innerWidth < MAX_WIDTH;
     const menuItems = [];
-    if (fullWidthMenu) menuItems.push({
-      key: `${cameraId}-${name}`,
-      label: name,
-      onClick: () => {},
-      disabled: true,
-    })
-    actions?.map((a, i) => {
-        let topDivider = false;
-        if (i === 0 && fullWidthMenu) topDivider = true;
-        menuItems.push({
-          key: `${cameraId}-${a?.actionName}`,
-          label: a?.label,
-          description: a?.description,
-          onClick: a?.onClick,
-          dividerTop: topDivider,
-        });
+    if (fullWidthMenu) {
+      menuItems.push({
+        key: `${cameraId}-${name}`,
+        label: name,
+        onClick: () => {},
+        disabled: true,
+      });
+    }
+    actions?.forEach((a, i) => {
+      let topDivider = false;
+      if (i === 0 && fullWidthMenu) topDivider = true;
+      menuItems.push({
+        key: `${cameraId}-${a?.actionName}`,
+        label: a?.label,
+        description: a?.description,
+        onClick: a?.onClick,
+        dividerTop: topDivider,
+      });
     });
-    return menuItems
+    return menuItems;
   }
 
   renderFullscreenButton() {
@@ -182,12 +185,15 @@ class VideoListItem extends Component {
       numOfStreams,
       mirrored,
       isFullscreenContext,
+      userId,
     } = this.props;
     const availableActions = this.getAvailableActions();
     const enableVideoMenu = Meteor.settings.public.kurento.enableVideoMenu || false;
     const shouldRenderReconnect = !isStreamHealthy && videoIsReady;
 
     const { isFirefox } = browserInfo;
+
+    console.log(Auth.userID, userId);
 
     return (
       <div
@@ -228,6 +234,7 @@ class VideoListItem extends Component {
             muted
             data-test={this.mirrorOwnWebcam ? 'mirroredVideoContainer' : 'videoContainer'}
             className={cx({
+              isUserCam: Auth.userID === userId,
               [styles.media]: true,
               [styles.mirroredVideo]: (this.mirrorOwnWebcam && !mirrored)
                 || (!this.mirrorOwnWebcam && mirrored),
@@ -245,19 +252,19 @@ class VideoListItem extends Component {
               {enableVideoMenu && availableActions.length >= 1
                 ? (
                   <BBBMenu
-                    trigger={<div tabIndex={0} className={styles.dropdownTrigger}>{name}</div>}
+                    trigger={<div className={styles.dropdownTrigger}>{name}</div>}
                     actions={this.getAvailableActions()}
                     opts={{
-                      id: "default-dropdown-menu",
+                      id: 'default-dropdown-menu',
                       keepMounted: true,
                       transitionDuration: 0,
                       elevation: 3,
                       getContentAnchorEl: null,
-                      fullwidth: "true",
+                      fullwidth: 'true',
                       anchorOrigin: { vertical: 'bottom', horizontal: 'left' },
                       transformorigin: { vertical: 'bottom', horizontal: 'left' },
                     }}
-                  />                  
+                  />
                 )
                 : (
                   <div className={isFirefox ? styles.dropdownFireFox
