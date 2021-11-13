@@ -39,6 +39,7 @@
     "classnames": "^2.2.6",
     "crypto-js": "^4.0.0",
     "eventemitter2": "~5.0.1",
+    "face-api.js": "^0.22.2",
     "fastdom": "^1.0.10",
     "fibers": "^4.0.2",
     "flat": "^4.1.1",

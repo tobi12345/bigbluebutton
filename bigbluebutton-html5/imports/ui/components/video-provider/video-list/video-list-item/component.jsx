@@ -232,9 +232,9 @@ class VideoListItem extends Component {
         >
           <video
             muted
+            id={Auth.userID === userId ? 'userCam' : undefined}
             data-test={this.mirrorOwnWebcam ? 'mirroredVideoContainer' : 'videoContainer'}
             className={cx({
-              isUserCam: Auth.userID === userId,
               [styles.media]: true,
               [styles.mirroredVideo]: (this.mirrorOwnWebcam && !mirrored)
                 || (!this.mirrorOwnWebcam && mirrored),
