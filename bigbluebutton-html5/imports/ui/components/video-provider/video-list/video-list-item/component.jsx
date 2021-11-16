@@ -193,8 +193,6 @@ class VideoListItem extends Component {
 
     const { isFirefox } = browserInfo;
 
-    console.log(Auth.userID, userId);
-
     return (
       <div
         data-test={voiceUser.talking ? 'webcamItemTalkingUser' : 'webcamItem'}

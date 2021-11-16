@@ -8,7 +8,6 @@ import Users from '/imports/api/users';
 import AnnotationsTextService from '/imports/ui/components/whiteboard/annotations/text/service';
 import { Annotations as AnnotationsLocal } from '/imports/ui/components/whiteboard/service';
 
-
 const CHAT_CONFIG = Meteor.settings.public.chat;
 const CHAT_ENABLED = CHAT_CONFIG.enabled;
 const PUBLIC_GROUP_CHAT_ID = CHAT_CONFIG.public_group_id;
@@ -20,6 +19,7 @@ const SUBSCRIPTIONS = [
   'presentation-pods', 'users-settings', 'guestUser', 'users-infos', 'note', 'meeting-time-remaining',
   'local-settings', 'users-typing', 'record-meetings', 'video-streams',
   'connection-status', 'voice-call-states', 'external-video-meetings',
+  'meeting-emotions',
 ];
 
 const EVENT_NAME = 'bbb-group-chat-messages-subscription-has-stoppped';
@@ -40,7 +40,6 @@ class Subscriptions extends Component {
     return children;
   }
 }
-
 
 export default withTracker(() => {
   const { credentials } = Auth;
@@ -65,7 +64,7 @@ export default withTracker(() => {
 
   let subscriptionsHandlers = SUBSCRIPTIONS.map((name) => {
     if ((!TYPING_INDICATOR_ENABLED && name.indexOf('typing') !== -1)
-      || (!CHAT_ENABLED && name.indexOf('chat') !== -1)) return;
+      || (!CHAT_ENABLED && name.indexOf('chat') !== -1)) return undefined;
 
     return Meteor.subscribe(name, subscriptionErrorHandler);
   });
@@ -99,9 +98,8 @@ export default withTracker(() => {
     ...subscriptionErrorHandler,
   });
 
-  subscriptionsHandlers = subscriptionsHandlers.filter(obj => obj);
-  const ready = subscriptionsHandlers.every(handler => handler.ready());
-  let groupChatMessageHandler = {};
+  subscriptionsHandlers = subscriptionsHandlers.filter((obj) => obj);
+  const ready = subscriptionsHandlers.every((handler) => handler.ready());
 
   if (CHAT_ENABLED && ready) {
     const chats = GroupChat.find({
@@ -115,19 +113,18 @@ export default withTracker(() => {
       ],
     }).fetch();
 
-    const chatIds = chats.map(chat => chat.chatId);
+    const chatIds = chats.map((chat) => chat.chatId);
 
     const subHandler = {
       ...subscriptionErrorHandler,
     };
 
-    groupChatMessageHandler = Meteor.subscribe('group-chat-msg', chatIds, subHandler);
+    Meteor.subscribe('group-chat-msg', chatIds, subHandler);
   }
 
   // TODO: Refactor all the late subscribers
-  let usersPersistentDataHandler = {};
   if (ready) {
-    usersPersistentDataHandler = Meteor.subscribe('users-persistent-data');
+    Meteor.subscribe('users-persistent-data');
   }
 
   return {
