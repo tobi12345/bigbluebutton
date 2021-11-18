@@ -2,8 +2,6 @@ import UserEmotions from '/imports/api/user-emotions';
 import { extractCredentials } from '/imports/api/common/server/helpers';
 
 export default function setUserEmotions(expressions) {
-  console.log('setUserEmotions');
-  console.log(expressions);
   const { meetingId, requesterUserId: userId } = extractCredentials(this.userId);
 
   check(meetingId, String);
@@ -17,6 +15,7 @@ export default function setUserEmotions(expressions) {
 
   const modifier = {
     $set: {
+      timestamp: Date.now(),
       data: expressions,
     },
   };
@@ -27,6 +26,7 @@ export default function setUserEmotions(expressions) {
   } else {
     UserEmotions.insert({
       ...selector,
+      timestamp: Date.now(),
       data: expressions,
     });
   }

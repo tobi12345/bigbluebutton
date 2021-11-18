@@ -3,7 +3,6 @@ import { defineMessages } from 'react-intl';
 import PropTypes from 'prop-types';
 import { styles } from '/imports/ui/components/user-list/user-list-content/styles';
 import _ from 'lodash';
-import { findDOMNode } from 'react-dom';
 import {
   List,
   AutoSizer,
@@ -13,6 +12,7 @@ import {
 import UserListItemContainer from './user-list-item/container';
 import UserOptionsContainer from './user-options/container';
 import Settings from '/imports/ui/services/settings';
+import EmotionAvgResult from '/imports/ui/components/user-emotions/emotions-avg-result/component';
 
 const propTypes = {
   compact: PropTypes.bool,
@@ -88,13 +88,7 @@ class UserParticipants extends Component {
     return !isPropsEqual || !isStateEqual;
   }
 
-  selectEl(el) {
-    if (!el) return null;
-    if (el.getAttribute('tabindex')) return el?.focus();
-    this.selectEl(el?.firstChild);
-  }
-
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate() {
     const { selectedUser } = this.state;
 
     if (selectedUser) {
@@ -110,8 +104,23 @@ class UserParticipants extends Component {
     this.refScrollContainer.removeEventListener('click', this.handleClickSelectedUser);
   }
 
+  handleClickSelectedUser(event) {
+    let selectedUser = null;
+    if (event.path) {
+      selectedUser = event.path.find((p) => p.className && p.className.includes('participantsList'));
+    }
+    this.setState({ selectedUser });
+  }
+
   getScrollContainerRef() {
     return this.refScrollContainer;
+  }
+
+  selectEl(el) {
+    if (!el) return null;
+    if (el.getAttribute('tabindex')) return el?.focus();
+    this.selectEl(el?.firstChild);
+    return undefined;
   }
 
   rowRenderer({
@@ -130,7 +139,7 @@ class UserParticipants extends Component {
     } = this.props;
     const { scrollArea } = this.state;
     const user = users[index];
-    const isRTL = Settings.application.isRTL;
+    const { isRTL } = Settings.application;
 
     return (
       <CellMeasurer
@@ -163,20 +172,13 @@ class UserParticipants extends Component {
     );
   }
 
-  handleClickSelectedUser(event) {
-    let selectedUser = null;
-    if (event.path) {
-      selectedUser = event.path.find(p => p.className && p.className.includes('participantsList'));
-    }
-    this.setState({ selectedUser });
-  }
-
-  rove(event) {
-    const { roving } = this.props;
-    const { selectedUser, scrollArea } = this.state;
-    const usersItemsRef = findDOMNode(scrollArea.firstChild);
-    roving(event, this.changeState, usersItemsRef, selectedUser);
-  }
+  // ->linter findDOMNode
+  // rove(event) {
+  //   const { roving } = this.props;
+  //   const { selectedUser, scrollArea } = this.state;
+  //   const usersItemsRef = findDOMNode(scrollArea.firstChild);
+  //   roving(event, this.changeState, usersItemsRef, selectedUser);
+  // }
 
   changeState(ref) {
     this.setState({ selectedUser: ref });
@@ -191,10 +193,11 @@ class UserParticipants extends Component {
       currentUser,
       meetingIsBreakout,
     } = this.props;
-    const { isOpen, scrollArea } = this.state;
+    const { isOpen } = this.state;
 
     return (
       <div className={styles.userListColumn}>
+        <EmotionAvgResult />
         {
           !compact
             ? (
@@ -213,19 +216,17 @@ class UserParticipants extends Component {
                       meetingIsBreakout,
                     }}
                     />
-                  ) : null
-                }
+                  ) : null}
 
               </div>
             )
             : <hr className={styles.separator} />
         }
         <div
-          id={'user-list-virtualized-scroll'}
+          id="user-list-virtualized-scroll"
           aria-label="Users list"
           role="region"
           className={styles.virtulizedScrollableList}
-          tabIndex={0}
           ref={(ref) => {
             this.refScrollContainer = ref;
           }}
@@ -242,10 +243,10 @@ class UserParticipants extends Component {
                   if (ref !== null) {
                     this.listRef = ref;
                   }
-
-                  if (ref !== null && !scrollArea) {
-                    this.setState({ scrollArea: findDOMNode(ref) });
-                  }
+                  // -> linter findDOMNode
+                  // if (ref !== null && !scrollArea) {
+                  //   this.setState({ scrollArea: findDOMNode(ref) });
+                  // }
                 }}
                 rowHeight={this.cache.rowHeight}
                 rowRenderer={this.rowRenderer}

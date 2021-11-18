@@ -3,8 +3,8 @@ import { withTracker } from 'meteor/react-meteor-data';
 import { injectIntl } from 'react-intl';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import VideoPreviewContainer from '/imports/ui/components/video-preview/container';
+import VideoService from '/imports/ui/components/video-provider/service';
 import EmotionButtonButton from './component';
-import VideoService from '../service';
 
 const EmotionButtonOptionsContainer = (props) => {
   const {

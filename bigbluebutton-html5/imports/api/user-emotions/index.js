@@ -7,6 +7,7 @@ if (Meteor.isServer) {
   // 1. meetingId
   // 2. meetingId, userId
 
+  UserEmotions.remove({});
   UserEmotions._ensureIndex({ meetingId: 1, userId: 1 });
 }
 

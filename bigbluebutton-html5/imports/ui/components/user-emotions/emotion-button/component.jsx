@@ -1,20 +1,40 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
 import Button from '/imports/ui/components/button/component';
-import Auth from '/imports/ui/services/auth';
 import { makeCall } from '/imports/ui/services/api';
-import UserEmotions from '/imports/api/user-emotions';
 import { injectIntl } from 'react-intl';
 import { debounce } from 'lodash';
 import * as faceapi from 'face-api.js';
-import { withTracker } from 'meteor/react-meteor-data';
 import { styles } from './styles';
 
 const JOIN_VIDEO_DELAY_MILLISECONDS = 500;
+const EMOTION_INTERVALL_MILLISECONDS = 2000;
 
 const propTypes = {
   hasVideoStream: PropTypes.bool.isRequired,
+};
+
+const useInterval = (callback, delay) => {
+  const savedCallback = useRef(() => undefined);
+
+  // Remember the latest callback.
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+  // Set up the interval.
+  useEffect(() => {
+    console.log('reset');
+    const tick = () => {
+      savedCallback.current();
+    };
+    if (delay !== null) {
+      const id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+    return undefined;
+  }, [delay]);
 };
 
 const useLoadModels = () => {
@@ -32,40 +52,44 @@ const useLoadModels = () => {
   return isLoaded;
 };
 
+const detectEmotions = () => {
+  const element = document.getElementById('userCam');
+  faceapi
+    .detectSingleFace(element, new faceapi.TinyFaceDetectorOptions())
+    .withFaceExpressions()
+    .then((detections) => {
+      const expressions = detections?.expressions;
+      if (expressions) {
+        makeCall('setUserEmotions', expressions);
+      }
+    })
+    .catch((error) => console.log(error));
+};
+
 const EmotionButton = ({
   hasVideoStream,
-  data,
 }) => {
-  console.log(data);
   const isLoaded = useLoadModels();
+  const [isActive, setActive] = useState();
+
+  const isRealyActive = isActive && isLoaded && hasVideoStream;
+  useInterval(detectEmotions, isRealyActive ? EMOTION_INTERVALL_MILLISECONDS : null);
 
   const handleOnClick = debounce(async () => {
-    if (isLoaded && hasVideoStream) {
-      try {
-        const element = document.getElementById('userCam');
-        const detections = await faceapi
-          .detectSingleFace(element, new faceapi.TinyFaceDetectorOptions())
-          .withFaceExpressions();
-        console.log(detections);
-        const expressions = detections?.expressions;
-        if (expressions) {
-          makeCall('setUserEmotions', expressions);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    }
+    setActive((active) => !active);
   }, JOIN_VIDEO_DELAY_MILLISECONDS);
 
   return (
     <Button
       label="emotion button"
       data-test={hasVideoStream ? 'leaveVideo' : 'joinVideo'}
-      className={cx(hasVideoStream || styles.btn)}
+      className={cx({
+        [styles.btn]: !isActive,
+      })}
       onClick={handleOnClick}
       hideLabel
       color={hasVideoStream ? 'primary' : 'default'}
-      icon={hasVideoStream ? 'video' : 'video_off'}
+      icon="happy"
       ghost={!hasVideoStream}
       disabled={!hasVideoStream || !isLoaded}
       size="lg"
@@ -76,10 +100,4 @@ const EmotionButton = ({
 
 EmotionButton.propTypes = propTypes;
 
-const withData = withTracker(() => ({
-  data: UserEmotions
-    .find({ meetingId: Auth.meetingID })
-    .fetch(),
-}));
-
-export default injectIntl(withData(EmotionButton));
+export default injectIntl(EmotionButton);
