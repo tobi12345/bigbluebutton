@@ -163,16 +163,6 @@ const EmotionButton = ({
 
   return (
     <>
-      <video
-        muted
-        playsInline
-        // ref={videoRef}
-        id="emotion-cam"
-        style={{
-          position: 'fixed', top: 0, width: 400, height: 400, zIndex: 10000, visibility: 'hidden',
-        }}
-        autoPlay
-      />
       <Button
         label="emotion button"
         className={cx({
