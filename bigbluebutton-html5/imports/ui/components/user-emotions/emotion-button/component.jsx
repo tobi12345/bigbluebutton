@@ -7,9 +7,12 @@ import { injectIntl } from 'react-intl';
 import { debounce } from 'lodash';
 import * as faceapi from 'face-api.js';
 import { styles } from './styles';
+import VideoPreviewContainer from './videoPreviewContainer';
+import { withModalMounter } from '/imports/ui/components/modal/service';
 
 const JOIN_VIDEO_DELAY_MILLISECONDS = 500;
 const EMOTION_INTERVALL_MILLISECONDS = 2000;
+let detector = null;
 
 const propTypes = {
   hasVideoStream: PropTypes.bool.isRequired,
@@ -46,21 +49,30 @@ const useLoadModels = () => {
       faceapi.nets.faceExpressionNet.loadFromUri('/html5client/models'),
     ])
       .catch((error) => console.log('Error Loading faceApiJs Models', error))
-      .then(() => setIsLoaded(true));
+      .then(() => {
+        setIsLoaded(true);
+        detector = new faceapi.TinyFaceDetectorOptions();
+      });
   }, [setIsLoaded]);
 
   return isLoaded;
 };
 
-const detectEmotions = () => {
-  const element = document.getElementById('userCam');
+const detectEmotions = (element) => {
+  console.time('detection start');
+  if (!detector) {
+    return;
+  }
+  const now = Date.now();
   faceapi
-    .detectSingleFace(element, new faceapi.TinyFaceDetectorOptions())
+    .detectSingleFace(element, detector)
     .withFaceExpressions()
     .then((detections) => {
+      console.timeEnd('detection start');
+      console.log(detections);
       const expressions = detections?.expressions;
       if (expressions) {
-        makeCall('setUserEmotions', expressions);
+        makeCall('setUserEmotions', expressions, now);
       }
     })
     .catch((error) => console.log(error));
@@ -68,36 +80,86 @@ const detectEmotions = () => {
 
 const EmotionButton = ({
   hasVideoStream,
+  mountModal,
 }) => {
   const isLoaded = useLoadModels();
   const [isActive, setActive] = useState();
+  const [stream, setStream] = useState();
+  const videoRef = useRef();
 
-  const isRealyActive = isActive && isLoaded && hasVideoStream;
-  useInterval(detectEmotions, isRealyActive ? EMOTION_INTERVALL_MILLISECONDS : null);
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
+  const isRealyActive = isActive && isLoaded && (hasVideoStream || stream);
+  console.log({
+    stream: !!stream, isActive, isLoaded, isRealyActive,
+  });
+
+  const detectEmotionsHandler = () => {
+    if (stream) {
+      detectEmotions(document.getElementById('emotion-cam'));
+    } else {
+      detectEmotions(document.getElementById('userCam'));
+    }
+  };
+
+  useInterval(detectEmotionsHandler, isRealyActive ? EMOTION_INTERVALL_MILLISECONDS : null);
+
+  const mountVideoPreview = () => {
+    mountModal(<VideoPreviewContainer onChange={(_stream) => {
+      setStream(_stream);
+      setActive(true);
+    }}
+    />);
+  };
 
   const handleOnClick = debounce(async () => {
+    if (!hasVideoStream && !isActive) {
+      mountVideoPreview();
+      return;
+    }
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        console.log(track);
+        track.stop();
+      });
+      setStream(null);
+    }
     setActive((active) => !active);
   }, JOIN_VIDEO_DELAY_MILLISECONDS);
 
   return (
-    <Button
-      label="emotion button"
-      data-test={hasVideoStream ? 'leaveVideo' : 'joinVideo'}
-      className={cx({
-        [styles.btn]: !isActive,
-      })}
-      onClick={handleOnClick}
-      hideLabel
-      color={hasVideoStream ? 'primary' : 'default'}
-      icon="happy"
-      ghost={!hasVideoStream}
-      disabled={!hasVideoStream || !isLoaded}
-      size="lg"
-      circle
-    />
+    <>
+      <video
+        muted
+        playsInline
+        ref={videoRef}
+        id="emotion-cam"
+        style={{
+          position: 'fixed', top: 0, width: 400, height: 400, display: 'none', zIndex: 10000,
+        }}
+        autoPlay
+      />
+      <Button
+        label="emotion button"
+        className={cx({
+          [styles.btn]: !isActive,
+        })}
+        onClick={handleOnClick}
+        hideLabel
+        color="primary"
+        icon="happy"
+        disabled={!isLoaded}
+        size="lg"
+        circle
+      />
+    </>
   );
 };
 
 EmotionButton.propTypes = propTypes;
 
-export default injectIntl(EmotionButton);
+export default withModalMounter(injectIntl(EmotionButton));

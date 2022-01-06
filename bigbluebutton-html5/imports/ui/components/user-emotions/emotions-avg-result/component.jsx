@@ -8,13 +8,16 @@ import _ from 'lodash';
 const EmotionAvgResult = ({
   userEmotions,
 }) => {
+  console.log(userEmotions);
+
   const meanResult = useMemo(() => ({
-    angry: _.meanBy(userEmotions, ({ data }) => data.angry),
-    disgusted: _.meanBy(userEmotions, ({ data }) => data.disgusted),
-    fearful: _.meanBy(userEmotions, ({ data }) => data.fearful),
-    neutral: _.meanBy(userEmotions, ({ data }) => data.neutral),
-    happy: _.meanBy(userEmotions, ({ data }) => data.happy),
-    sad: _.meanBy(userEmotions, ({ data }) => data.sad),
+    angry: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.angry),
+    disgusted: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.disgusted),
+    fearful: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.fearful),
+    neutral: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.neutral),
+    happy: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.happy),
+    sad: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.sad),
+    surprised: _.meanBy(userEmotions, ({ data }) => data[data.length - 1].expressions.surprised),
   }), [userEmotions]);
 
   return (

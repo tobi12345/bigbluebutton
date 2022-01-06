@@ -4,7 +4,6 @@ import { defineMessages } from 'react-intl';
 import Icon from '/imports/ui/components/icon/component';
 import _ from 'lodash';
 import { styles } from './styles';
-import EmotionResult from '/imports/ui/components/user-emotions/component';
 
 const messages = defineMessages({
   presenter: {
@@ -138,7 +137,6 @@ const UserName = (props) => {
           )
           : null
       }
-      <EmotionResult user={user} />
     </div>
   );
 };

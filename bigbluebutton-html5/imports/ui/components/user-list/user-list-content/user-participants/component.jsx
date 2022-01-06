@@ -12,7 +12,6 @@ import {
 import UserListItemContainer from './user-list-item/container';
 import UserOptionsContainer from './user-options/container';
 import Settings from '/imports/ui/services/settings';
-import EmotionAvgResult from '/imports/ui/components/user-emotions/emotions-avg-result/component';
 
 const propTypes = {
   compact: PropTypes.bool,
@@ -58,7 +57,7 @@ class UserParticipants extends Component {
     this.userRefs = [];
 
     this.getScrollContainerRef = this.getScrollContainerRef.bind(this);
-    this.rove = this.rove.bind(this);
+    // this.rove = this.rove.bind(this);
     this.changeState = this.changeState.bind(this);
     this.rowRenderer = this.rowRenderer.bind(this);
     this.handleClickSelectedUser = this.handleClickSelectedUser.bind(this);
@@ -197,7 +196,6 @@ class UserParticipants extends Component {
 
     return (
       <div className={styles.userListColumn}>
-        <EmotionAvgResult />
         {
           !compact
             ? (
