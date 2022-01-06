@@ -78,6 +78,14 @@ const detectEmotions = (element) => {
     .catch((error) => console.log(error));
 };
 
+const usePrevious = (value) => {
+  const ref = useRef();
+  useEffect(() => {
+    ref.current = value;
+  });
+  return ref.current;
+};
+
 const EmotionButton = ({
   hasVideoStream,
   mountModal,
@@ -86,6 +94,14 @@ const EmotionButton = ({
   const [isActive, setActive] = useState();
   const [stream, setStream] = useState();
   const videoRef = useRef();
+  const lastHasVideoStream = usePrevious(hasVideoStream);
+
+  useEffect(() => {
+    videoRef.current = document.createElement('video');
+    videoRef.current.setAttribute('autoplay', 'muted');
+    videoRef.current.width = 400;
+    videoRef.current.height = 400;
+  }, []);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -93,14 +109,28 @@ const EmotionButton = ({
     }
   }, [stream]);
 
+  useEffect(() => {
+    if (!hasVideoStream && !stream && isActive) {
+      setActive(false);
+    }
+  }, [hasVideoStream, stream, isActive]);
+
+  useEffect(() => {
+    if (!hasVideoStream && lastHasVideoStream && isActive && stream) {
+      setStream(null);
+      setActive(false);
+    }
+  }, [hasVideoStream, lastHasVideoStream, isActive, stream]);
+
   const isRealyActive = isActive && isLoaded && (hasVideoStream || stream);
+
   console.log({
     stream: !!stream, isActive, isLoaded, isRealyActive,
   });
 
   const detectEmotionsHandler = () => {
     if (stream) {
-      detectEmotions(document.getElementById('emotion-cam'));
+      detectEmotions(videoRef.current);
     } else {
       detectEmotions(document.getElementById('userCam'));
     }
@@ -136,10 +166,10 @@ const EmotionButton = ({
       <video
         muted
         playsInline
-        ref={videoRef}
+        // ref={videoRef}
         id="emotion-cam"
         style={{
-          position: 'fixed', top: 0, width: 400, height: 400, display: 'none', zIndex: 10000,
+          position: 'fixed', top: 0, width: 400, height: 400, zIndex: 10000, visibility: 'hidden',
         }}
         autoPlay
       />
