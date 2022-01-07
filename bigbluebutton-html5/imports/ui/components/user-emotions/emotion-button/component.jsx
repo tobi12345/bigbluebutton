@@ -99,20 +99,46 @@ const ExperiemtModal = ({ onDismiss, onOk }) => {
       title="Experiment Agreement"
     >
       <div>
+        <div style={{
+          display: 'flex', flexDirection: 'column', gap: 10, margin: '10px 10px 15px 10px', fontSize: 17,
+        }}
+        >
+          <div>
+            <div style={{ fontWeight: 'bold' }}>What are we doing?</div>
+            <div style={{ fontSize: 16 }}>
+              We analize your emotions with machine lerning on your device using your webcam
+            </div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>What data are we collecting?</div>
+            <div style={{ fontSize: 16 }}>
+              userID (no names!), timestamps, results, user agent (optionaly)
+            </div>
+          </div>
+          <div>
+            <div style={{ fontWeight: 'bold' }}>Who has access to the collected data?</div>
+            <div style={{ fontSize: 16 }}>
+              Only me (Tobias Klesel),
+              but Prof. Dr.-Ing. Jörg Ott as my master thesis advisor
+              will also see avereged and anonymized data
+            </div>
+          </div>
+        </div>
         <div>
-          <label htmlFor="sendPCStats">
+          <label htmlFor="sendPCStats" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
             <input
               type="checkbox"
               id="sendPCStats"
               onChange={(e) => setChecked(e.target.checked)}
               checked={checked}
             />
-            <span aria-hidden>Send Browser Information (Optional but would realy help)</span>
+            <span aria-hidden>Send Browser Information (optional but would realy help)</span>
           </label>
         </div>
+        <div style={{ height: 10 }} />
         <div>
           <Button
-            label="ok emotion button"
+            label="Start Emotion Recognition"
             className={styles.btn}
             onClick={() => onOk(checked)}
             color="primary"
