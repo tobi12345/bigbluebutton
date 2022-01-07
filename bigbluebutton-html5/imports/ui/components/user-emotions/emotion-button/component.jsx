@@ -4,13 +4,12 @@ import cx from 'classnames';
 import Button from '/imports/ui/components/button/component';
 import { makeCall } from '/imports/ui/services/api';
 import { injectIntl } from 'react-intl';
-import { debounce } from 'lodash';
 import * as faceapi from 'face-api.js';
 import { styles } from './styles';
 import VideoPreviewContainer from './videoPreviewContainer';
 import { withModalMounter } from '/imports/ui/components/modal/service';
+import Modal from '/imports/ui/components/modal/simple/component';
 
-const JOIN_VIDEO_DELAY_MILLISECONDS = 500;
 const EMOTION_INTERVALL_MILLISECONDS = 2000;
 let detector = null;
 
@@ -58,8 +57,8 @@ const useLoadModels = () => {
   return isLoaded;
 };
 
-const detectEmotions = (element) => {
-  console.time('detection start');
+const detectEmotions = (element, type) => {
+  // console.time('detection start');
   if (!detector) {
     return;
   }
@@ -68,14 +67,19 @@ const detectEmotions = (element) => {
     .detectSingleFace(element, detector)
     .withFaceExpressions()
     .then((detections) => {
-      console.timeEnd('detection start');
-      console.log(detections);
-      const expressions = detections?.expressions;
-      if (expressions) {
-        makeCall('setUserEmotions', expressions, now);
-      }
+      // console.timeEnd('detection start');
+      // console.log(detections);
+      makeCall('setUserEmotions', detections, now, Date.now() - now, type);
     })
     .catch((error) => console.log(error));
+};
+
+const sendStart = (type, sendBrowserData) => {
+  makeCall('startUserEmotions', Date.now(), type, sendBrowserData ? navigator.userAgent : null);
+};
+
+const sendEnd = () => {
+  makeCall('endUserEmotions', Date.now());
 };
 
 const usePrevious = (value) => {
@@ -86,6 +90,40 @@ const usePrevious = (value) => {
   return ref.current;
 };
 
+const ExperiemtModal = ({ onDismiss, onOk }) => {
+  const [checked, setChecked] = useState(false);
+
+  return (
+    <Modal
+      dismiss={{ callback: onDismiss }}
+      title="Experiment Agreement"
+    >
+      <div>
+        <div>
+          <label htmlFor="sendPCStats">
+            <input
+              type="checkbox"
+              id="sendPCStats"
+              onChange={(e) => setChecked(e.target.checked)}
+              checked={checked}
+            />
+            <span aria-hidden>Send Browser Information (Optional but would realy help)</span>
+          </label>
+        </div>
+        <div>
+          <Button
+            label="ok emotion button"
+            className={styles.btn}
+            onClick={() => onOk(checked)}
+            color="primary"
+            size="lg"
+          />
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 const EmotionButton = ({
   hasVideoStream,
   mountModal,
@@ -93,6 +131,7 @@ const EmotionButton = ({
   const isLoaded = useLoadModels();
   const [isActive, setActive] = useState();
   const [stream, setStream] = useState();
+  const [showModal, setShowModal] = useState(false);
   const videoRef = useRef();
   const lastHasVideoStream = usePrevious(hasVideoStream);
 
@@ -112,6 +151,7 @@ const EmotionButton = ({
   useEffect(() => {
     if (!hasVideoStream && !stream && isActive) {
       setActive(false);
+      sendEnd();
     }
   }, [hasVideoStream, stream, isActive]);
 
@@ -119,38 +159,39 @@ const EmotionButton = ({
     if (!hasVideoStream && lastHasVideoStream && isActive && stream) {
       setStream(null);
       setActive(false);
+      sendEnd();
     }
   }, [hasVideoStream, lastHasVideoStream, isActive, stream]);
 
   const isRealyActive = isActive && isLoaded && (hasVideoStream || stream);
 
-  console.log({
-    stream: !!stream, isActive, isLoaded, isRealyActive,
-  });
-
   const detectEmotionsHandler = () => {
     if (stream) {
-      detectEmotions(videoRef.current);
+      detectEmotions(videoRef.current, 'result-only');
     } else {
-      detectEmotions(document.getElementById('userCam'));
+      detectEmotions(document.getElementById('userCam'), 'send-video');
     }
   };
 
   useInterval(detectEmotionsHandler, isRealyActive ? EMOTION_INTERVALL_MILLISECONDS : null);
 
-  const mountVideoPreview = () => {
+  const mountVideoPreview = (sendBrowserStats) => {
     mountModal(<VideoPreviewContainer onChange={(_stream) => {
+      sendStart('result-only', sendBrowserStats);
       setStream(_stream);
       setActive(true);
     }}
     />);
   };
 
-  const handleOnClick = debounce(async () => {
-    if (!hasVideoStream && !isActive) {
-      mountVideoPreview();
+  const handleOnClick = async () => {
+    if (!isActive) {
+      setShowModal(true);
       return;
     }
+
+    setActive(false);
+    sendEnd();
     if (stream) {
       stream.getTracks().forEach((track) => {
         console.log(track);
@@ -158,11 +199,26 @@ const EmotionButton = ({
       });
       setStream(null);
     }
-    setActive((active) => !active);
-  }, JOIN_VIDEO_DELAY_MILLISECONDS);
+  };
+
+  const onOk = (sendBrowserStats) => {
+    setShowModal(false);
+    if (!hasVideoStream) {
+      mountVideoPreview(sendBrowserStats);
+      return;
+    }
+    sendStart('send-video', sendBrowserStats);
+    setActive(true);
+  };
 
   return (
     <>
+      {showModal && (
+      <ExperiemtModal
+        onDismiss={() => setShowModal(false)}
+        onOk={onOk}
+      />
+      )}
       <Button
         label="emotion button"
         className={cx({
