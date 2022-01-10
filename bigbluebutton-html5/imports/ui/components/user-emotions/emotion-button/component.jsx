@@ -10,7 +10,7 @@ import VideoPreviewContainer from './videoPreviewContainer';
 import { withModalMounter } from '/imports/ui/components/modal/service';
 import Modal from '/imports/ui/components/modal/simple/component';
 
-const EMOTION_INTERVALL_MILLISECONDS = 2000;
+const EMOTION_INTERVALL_MILLISECONDS = 20000;
 let detector = null;
 
 const propTypes = {
@@ -106,13 +106,13 @@ const ExperiemtModal = ({ onDismiss, onOk }) => {
           <div>
             <div style={{ fontWeight: 'bold' }}>What are we doing?</div>
             <div style={{ fontSize: 16 }}>
-              We analize your emotions with machine lerning on your device using your webcam
+              We analyze your emotions on your device using your webcam and machine learning 
             </div>
           </div>
           <div>
             <div style={{ fontWeight: 'bold' }}>What data are we collecting?</div>
             <div style={{ fontSize: 16 }}>
-              userID (no names!), timestamps, results, user agent (optionaly)
+            every X seconds, userID (no names!), timestamps, emotion results and user agent (optionaly)
             </div>
           </div>
           <div>
@@ -120,7 +120,7 @@ const ExperiemtModal = ({ onDismiss, onOk }) => {
             <div style={{ fontSize: 16 }}>
               Only me (Tobias Klesel),
               but Prof. Dr.-Ing. Jörg Ott as my master thesis advisor
-              will also see avereged and anonymized data
+              will also see averaged and anonymized data
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ const ExperiemtModal = ({ onDismiss, onOk }) => {
               onChange={(e) => setChecked(e.target.checked)}
               checked={checked}
             />
-            <span aria-hidden>Send Browser Information (optional but would realy help)</span>
+            <span aria-hidden>Send Browser Information (optional, but would realy help)</span>
           </label>
         </div>
         <div style={{ height: 10 }} />
@@ -220,7 +220,6 @@ const EmotionButton = ({
     sendEnd();
     if (stream) {
       stream.getTracks().forEach((track) => {
-        console.log(track);
         track.stop();
       });
       setStream(null);
@@ -246,7 +245,7 @@ const EmotionButton = ({
       />
       )}
       <Button
-        label="emotion button"
+        label={(isActive?"End":"Start")+" Emotion Recognition"}
         className={cx({
           [styles.btn]: !isActive,
         })}
