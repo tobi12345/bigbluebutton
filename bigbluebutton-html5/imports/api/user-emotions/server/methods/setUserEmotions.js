@@ -9,7 +9,17 @@ export default async function setUserEmotions(detections, timestamp, duration, t
   check(userId, String);
   check(timestamp, Number);
 
-  await fs.appendFile(dataPath(meetingId), `${['result', userId, JSON.stringify(detections), timestamp, duration, type].join(';')}\n`);
+
+  const data = {
+    kind: "result",
+    userId,
+    detections,
+    timestamp,
+    duration,
+    type
+  }
+
+  await fs.appendFile(dataPath(meetingId), `${JSON.stringify(data)}\n`);
 
   // const selector = {
   //   userId,

@@ -27,7 +27,6 @@ const useInterval = (callback, delay) => {
 
   // Set up the interval.
   useEffect(() => {
-    console.log('reset');
     const tick = () => {
       savedCallback.current();
     };
@@ -39,16 +38,22 @@ const useInterval = (callback, delay) => {
   }, [delay]);
 };
 
+const sendModelLoad = (start,duration) => {
+  makeCall('modelLoadTime', start,duration);
+};
+
 const useLoadModels = () => {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
+    const now = Date.now()
     Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri('/html5client/models'),
       faceapi.nets.faceExpressionNet.loadFromUri('/html5client/models'),
     ])
       .catch((error) => console.log('Error Loading faceApiJs Models', error))
       .then(() => {
+        sendModelLoad(now,Date.now() - now)
         setIsLoaded(true);
         detector = new faceapi.TinyFaceDetectorOptions();
       });
@@ -96,11 +101,11 @@ const ExperiemtModal = ({ onDismiss, onOk }) => {
   return (
     <Modal
       dismiss={{ callback: onDismiss }}
-      title="Experiment Agreement"
+      title="Emotion Recognition Demo"
     >
       <div>
         <div style={{
-          display: 'flex', flexDirection: 'column', gap: 10, margin: '10px 10px 15px 10px', fontSize: 17,
+          display: 'flex', flexDirection: 'column', gap: 10, margin: '10px 10px 15px 0px', fontSize: 17,
         }}
         >
           <div>
@@ -238,25 +243,25 @@ const EmotionButton = ({
 
   return (
     <>
-      {showModal && (
-      <ExperiemtModal
-        onDismiss={() => setShowModal(false)}
-        onOk={onOk}
-      />
-      )}
-      <Button
-        label={(isActive?"End":"Start")+" Emotion Recognition"}
-        className={cx({
-          [styles.btn]: !isActive,
-        })}
-        onClick={handleOnClick}
-        hideLabel
-        color="primary"
-        icon="happy"
-        disabled={!isLoaded}
-        size="lg"
-        circle
-      />
+        {showModal && (
+        <ExperiemtModal
+          onDismiss={() => setShowModal(false)}
+          onOk={onOk}
+        />
+        )}
+        <Button
+          label={(isActive?"End":"Start")+" Emotion Recognition"}
+          className={cx({
+            [styles.btn]: !isActive,
+          })}
+          onClick={handleOnClick}
+          hideLabel
+          color="primary"
+          icon="happy"
+          disabled={!isLoaded}
+          size="lg"
+          circle
+        />
     </>
   );
 };

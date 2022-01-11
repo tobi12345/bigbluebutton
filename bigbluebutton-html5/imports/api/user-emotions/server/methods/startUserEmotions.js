@@ -9,5 +9,13 @@ export default async function startUserEmotions(timestamp, type, userAgent) {
   check(userId, String);
   check(timestamp, Number);
 
-  await fs.appendFile(dataPath(meetingId), `${['start', userId, timestamp, type, userAgent].join(';')}\n`);
+  const data = {
+    kind: "start",
+    userId,
+    timestamp,
+    type,
+    userAgent
+  }
+
+  await fs.appendFile(dataPath(meetingId), `${JSON.stringify(data)}\n`);
 }
