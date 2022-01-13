@@ -1,82 +1,21 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef,useCallback } from 'react';
 import PropTypes from 'prop-types';
 import cx from 'classnames';
 import Button from '/imports/ui/components/button/component';
 import { makeCall } from '/imports/ui/services/api';
 import { injectIntl } from 'react-intl';
-import * as faceapi from 'face-api.js';
 import { styles } from './styles';
 import VideoPreviewContainer from './videoPreviewContainer';
 import { withModalMounter } from '/imports/ui/components/modal/service';
-import Modal from '/imports/ui/components/modal/simple/component';
+import { ExperiemtModal } from './modals'
+import { useInterval,useLoadModels,usePrevious,detectEmotions } from './hooks'
+import { useMemo } from 'react';
+import { startCase } from "lodash"
 
-const EMOTION_INTERVALL_MILLISECONDS = 20000;
-let detector = null;
+const EMOTION_INTERVALL_MILLISECONDS = 2000;
 
 const propTypes = {
   hasVideoStream: PropTypes.bool.isRequired,
-};
-
-const useInterval = (callback, delay) => {
-  const savedCallback = useRef(() => undefined);
-
-  // Remember the latest callback.
-  useEffect(() => {
-    savedCallback.current = callback;
-  }, [callback]);
-
-  // Set up the interval.
-  useEffect(() => {
-    const tick = () => {
-      savedCallback.current();
-    };
-    if (delay !== null) {
-      const id = setInterval(tick, delay);
-      return () => clearInterval(id);
-    }
-    return undefined;
-  }, [delay]);
-};
-
-const sendModelLoad = (start,duration) => {
-  makeCall('modelLoadTime', start,duration);
-};
-
-const useLoadModels = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const now = Date.now()
-    Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/html5client/models'),
-      faceapi.nets.faceExpressionNet.loadFromUri('/html5client/models'),
-    ])
-      .catch((error) => console.log('Error Loading faceApiJs Models', error))
-      .then(() => {
-        sendModelLoad(now,Date.now() - now)
-        setIsLoaded(true);
-        detector = new faceapi.TinyFaceDetectorOptions();
-      });
-  }, [setIsLoaded]);
-
-  return isLoaded;
-};
-
-const detectEmotions = (element, type) => {
-  // console.time('detection start');
-  if (!detector) {
-    return;
-  }
-  const now = Date.now();
-  faceapi
-    .detectSingleFace(element, detector)
-    .withFaceExpressions()
-    .then((detections) => {
-      // console.timeEnd('detection start');
-      // console.log(detections);
-      makeCall('setUserEmotions', detections, now, Date.now() - now, type);
-    })
-    .catch((error) => console.log(error));
 };
 
 const sendStart = (type, sendBrowserData) => {
@@ -87,73 +26,51 @@ const sendEnd = () => {
   makeCall('endUserEmotions', Date.now());
 };
 
-const usePrevious = (value) => {
-  const ref = useRef();
-  useEffect(() => {
-    ref.current = value;
-  });
-  return ref.current;
-};
+const THRESHOLD = 0.2
 
-const ExperiemtModal = ({ onDismiss, onOk }) => {
-  const [checked, setChecked] = useState(false);
+const ResultItem = ({id,value})=>{
 
   return (
-    <Modal
-      dismiss={{ callback: onDismiss }}
-      title="Emotion Recognition Demo"
-    >
+    <>
       <div>
-        <div style={{
-          display: 'flex', flexDirection: 'column', gap: 10, margin: '10px 10px 15px 0px', fontSize: 17,
-        }}
-        >
-          <div>
-            <div style={{ fontWeight: 'bold' }}>What are we doing?</div>
-            <div style={{ fontSize: 16 }}>
-              We analyze your emotions on your device using your webcam and machine learning 
-            </div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 'bold' }}>What data are we collecting?</div>
-            <div style={{ fontSize: 16 }}>
-            every X seconds, userID (no names!), timestamps, emotion results and user agent (optionaly)
-            </div>
-          </div>
-          <div>
-            <div style={{ fontWeight: 'bold' }}>Who has access to the collected data?</div>
-            <div style={{ fontSize: 16 }}>
-              Only me (Tobias Klesel),
-              but Prof. Dr.-Ing. Jörg Ott as my master thesis advisor
-              will also see averaged and anonymized data
-            </div>
-          </div>
-        </div>
-        <div>
-          <label htmlFor="sendPCStats" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            <input
-              type="checkbox"
-              id="sendPCStats"
-              onChange={(e) => setChecked(e.target.checked)}
-              checked={checked}
-            />
-            <span aria-hidden>Send Browser Information (optional, but would realy help)</span>
-          </label>
-        </div>
-        <div style={{ height: 10 }} />
-        <div>
-          <Button
-            label="Start Emotion Recognition"
-            className={styles.btn}
-            onClick={() => onOk(checked)}
-            color="primary"
-            size="lg"
-          />
-        </div>
+        {startCase(id)+":"}
       </div>
-    </Modal>
-  );
-};
+      <div>
+        {value.toFixed(2)}
+        {/* {Math.round(value*100)/100} */}
+      </div>
+    </>
+  )
+}
+
+const ExpressionResult = ({expressions})=>{
+
+  const topResult = useMemo(()=>{
+    if(expressions === undefined){
+      return
+    }
+
+    return Object.entries(expressions)
+      .filter(([key,value])=>value>=THRESHOLD)
+      .slice(0,2)
+      .sort((a,b)=>b[1]-a[1])
+  },[expressions])
+
+  if(!topResult){
+    return <div style={{color: "#fff",width: 100,display: 'flex',alignItems:"center",justifyContent:"center"}}>
+        expression 404
+    </div>
+  }
+
+  return (
+    <div style={{color: "#fff",width: 100,display:"grid", gridTemplateColumns: "1fr 1fr"}}>
+      {
+        topResult.map(([key,value])=><ResultItem key={key} id={key} value={value}/>)
+      }
+    </div>
+  )
+
+}
 
 const EmotionButton = ({
   hasVideoStream,
@@ -162,6 +79,7 @@ const EmotionButton = ({
   const isLoaded = useLoadModels();
   const [isActive, setActive] = useState();
   const [stream, setStream] = useState();
+  const [expressions, setExpressions] = useState();
   const [showModal, setShowModal] = useState(false);
   const videoRef = useRef();
   const lastHasVideoStream = usePrevious(hasVideoStream);
@@ -196,26 +114,28 @@ const EmotionButton = ({
 
   const isRealyActive = isActive && isLoaded && (hasVideoStream || stream);
 
-  const detectEmotionsHandler = () => {
+  const detectEmotionsHandler = useCallback(async () => {
+    let result = undefined
     if (stream) {
-      detectEmotions(videoRef.current, 'result-only');
+      result = await detectEmotions(videoRef.current, 'result-only');
     } else {
-      detectEmotions(document.getElementById('userCam'), 'send-video');
+      result = await detectEmotions(document.getElementById('userCam'), 'send-video');
     }
-  };
+    setExpressions(result)
+  },[stream]);
 
   useInterval(detectEmotionsHandler, isRealyActive ? EMOTION_INTERVALL_MILLISECONDS : null);
 
-  const mountVideoPreview = (sendBrowserStats) => {
+  const mountVideoPreview = useCallback((sendBrowserStats) => {
     mountModal(<VideoPreviewContainer onChange={(_stream) => {
       sendStart('result-only', sendBrowserStats);
       setStream(_stream);
       setActive(true);
     }}
     />);
-  };
+  },[mountModal]);
 
-  const handleOnClick = async () => {
+  const handleOnClick = useCallback(async () => {
     if (!isActive) {
       setShowModal(true);
       return;
@@ -229,9 +149,9 @@ const EmotionButton = ({
       });
       setStream(null);
     }
-  };
+  },[isActive,stream]);
 
-  const onOk = (sendBrowserStats) => {
+  const onOk = useCallback((sendBrowserStats) => {
     setShowModal(false);
     if (!hasVideoStream) {
       mountVideoPreview(sendBrowserStats);
@@ -239,7 +159,7 @@ const EmotionButton = ({
     }
     sendStart('send-video', sendBrowserStats);
     setActive(true);
-  };
+  },[mountVideoPreview,hasVideoStream]);
 
   return (
     <>
@@ -262,6 +182,7 @@ const EmotionButton = ({
           size="lg"
           circle
         />
+        {isActive && <ExpressionResult expressions={expressions}/>}
     </>
   );
 };
