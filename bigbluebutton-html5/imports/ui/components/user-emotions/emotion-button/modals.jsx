@@ -13,7 +13,6 @@ export const ExperiemtModal = ({ onDismiss, onOk }) => {
         style={{width: "800px"}}
       >
         <div>
-        <div>
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 10, margin: '10px 10px 15px 0px', fontSize: 17,
           }}
@@ -23,6 +22,28 @@ export const ExperiemtModal = ({ onDismiss, onOk }) => {
               <div style={{ fontSize: 16 }}>
                 We analyze your emotions on your device using your webcam and machine learning 
               </div>
+            </div>
+            <div>
+                <div style={{ fontWeight: 'bold' }}>How are we doing this?</div>
+                <div style={{ fontSize: 16 }}>
+                    <img style={{width:"100%",height:"auto"}} src={"/html5client/models/bbbarch.png"}/>
+                </div>
+            </div>
+            <div>
+                <div style={{ fontWeight: 'bold' }}>What is an emotion recognition result?</div>
+                <div style={{ fontSize: 16 }}>
+                    Seven emotions are assigned a value between 0 and 1.<br/>
+                    An example could look like this:
+                </div>
+                <div style={{ fontSize: 11, display:"grid",gridTemplateColumns: "auto auto auto auto",justifyContent:"center",gap:"2px 10px" }}>
+                    <div>neutral: </div> <div>0.0000037177412650635233</div>
+                    <div>happy: </div> <div>0.999993085861206</div>
+                    <div>sad: </div> <div>7.105666668394406e-7</div>
+                    <div>angry: </div> <div>0.0000012611731108336244</div>
+                    <div>fearful: </div> <div>3 .2339567468397945e-8</div>
+                    <div>disgusted: </div> <div>6.416606197490182e-7</div>
+                    <div>surprised: </div> <div>4.908182518192916e-7</div>
+                </div>
             </div>
             <div>
               <div style={{ fontWeight: 'bold' }}>What data are we collecting?</div>
@@ -60,9 +81,6 @@ export const ExperiemtModal = ({ onDismiss, onOk }) => {
               size="lg"
             />
           </div>
-        </div>
-        <div>
-        </div>
         </div>
       </Modal>
     );
