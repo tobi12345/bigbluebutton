@@ -30,9 +30,10 @@ export const ExperiemtModal = ({ onDismiss, onOk }) => {
                 </div>
             </div>
             <div>
-                <div style={{ fontWeight: 'bold' }}>What is an emotion recognition result?</div>
+                <div style={{ fontWeight: 'bold' }}>How does an emotions recognition result look like?</div>
                 <div style={{ fontSize: 16 }}>
-                    Seven emotions are assigned a value between 0 and 1.<br/>
+                    For each of seven emotions a value between 0 and 1 is assigned.
+                    Where 0 means not recognized and 1 means recognized.
                     An example could look like this:
                 </div>
                 <div style={{ fontSize: 11, display:"grid",gridTemplateColumns: "auto auto auto auto",justifyContent:"center",gap:"2px 10px" }}>
@@ -40,7 +41,7 @@ export const ExperiemtModal = ({ onDismiss, onOk }) => {
                     <div>happy: </div> <div>0.999993085861206</div>
                     <div>sad: </div> <div>7.105666668394406e-7</div>
                     <div>angry: </div> <div>0.0000012611731108336244</div>
-                    <div>fearful: </div> <div>3 .2339567468397945e-8</div>
+                    <div>fearful: </div> <div>3.2339567468397945e-8</div>
                     <div>disgusted: </div> <div>6.416606197490182e-7</div>
                     <div>surprised: </div> <div>4.908182518192916e-7</div>
                 </div>

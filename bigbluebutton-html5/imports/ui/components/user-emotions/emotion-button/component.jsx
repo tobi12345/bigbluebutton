@@ -12,7 +12,7 @@ import { useInterval,useLoadModels,usePrevious,detectEmotions } from './hooks'
 import { useMemo } from 'react';
 import { startCase } from "lodash"
 
-const EMOTION_INTERVALL_MILLISECONDS = 2000;
+const EMOTION_INTERVALL_MILLISECONDS = 20000;
 
 const propTypes = {
   hasVideoStream: PropTypes.bool.isRequired,
